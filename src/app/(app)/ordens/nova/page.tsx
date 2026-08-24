@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceOrder } from "../actions";
+import { getCurrentProfile } from "@/lib/profile";
 
 export default async function NovaOrdemPage({
   searchParams,
@@ -8,6 +9,8 @@ export default async function NovaOrdemPage({
 }) {
   const supabase = createClient();
   const { data: clients } = await supabase.from("clients").select("id, name").order("name");
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   return (
     <div className="max-w-3xl">
@@ -93,16 +96,18 @@ export default async function NovaOrdemPage({
           </div>
         </div>
 
-        {/* 4. Valor */}
-        <div>
-          <label className="block text-xs text-gardin-muted mb-1">Valor total do serviço (R$)</label>
-          <input
-            type="number"
-            step="0.01"
-            name="total_value"
-            className="w-full bg-black/40 border border-gardin-border rounded-lg px-3 py-2 text-sm text-gardin-white"
-          />
-        </div>
+        {/* 4. Valor (só quem tem permissão financeira vê/preenche) */}
+        {canViewFinancials && (
+          <div>
+            <label className="block text-xs text-gardin-muted mb-1">Valor total do serviço (R$)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="total_value"
+              className="w-full bg-black/40 border border-gardin-border rounded-lg px-3 py-2 text-sm text-gardin-white"
+            />
+          </div>
+        )}
 
         {/* 5. Etapas necessárias */}
         <div>

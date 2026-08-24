@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getCurrentProfile } from "@/lib/profile";
 
 export async function createServiceOrder(formData: FormData) {
   const supabase = createClient();
@@ -93,6 +94,58 @@ export async function updateServiceOrderStage(formData: FormData) {
     .eq("id", orderId);
 
   revalidatePath(`/ordens/${orderId}`);
+  revalidatePath("/dashboard");
+  redirect(`/ordens/${orderId}`);
+}
+
+export async function updateServiceOrder(formData: FormData) {
+  const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const orderId = String(formData.get("order_id"));
+
+  const payload = {
+    project_name: String(formData.get("project_name") || ""),
+    description: String(formData.get("description") || "") || null,
+    quantity: formData.get("quantity") ? Number(formData.get("quantity")) : null,
+    measurements: String(formData.get("measurements") || "") || null,
+    material: String(formData.get("material") || "") || null,
+    agreed_deadline: String(formData.get("agreed_deadline") || "") || null,
+    expected_completion_date: String(formData.get("expected_completion_date") || "") || null,
+    priority: String(formData.get("priority") || "normal"),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!payload.project_name) {
+    redirect(`/ordens/${orderId}/editar?erro=${encodeURIComponent("Nome do projeto é obrigatório.")}`);
+  }
+
+  const { error } = await supabase.from("service_orders").update(payload).eq("id", orderId);
+
+  if (error) {
+    redirect(`/ordens/${orderId}/editar?erro=${encodeURIComponent(error.message)}`);
+  }
+
+  // financeiro: só atualiza se o usuário tiver permissão para ver/editar valores
+  if (profile?.canViewFinancials) {
+    const totalValue = Number(formData.get("total_value") || 0);
+    const discount = Number(formData.get("discount") || 0);
+    const addition = Number(formData.get("addition") || 0);
+    const status = String(formData.get("financial_status") || "nao_cobrado");
+
+    await supabase
+      .from("financials")
+      .update({
+        total_value: totalValue,
+        discount,
+        addition,
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("service_order_id", orderId);
+  }
+
+  revalidatePath(`/ordens/${orderId}`);
+  revalidatePath("/ordens");
   revalidatePath("/dashboard");
   redirect(`/ordens/${orderId}`);
 }

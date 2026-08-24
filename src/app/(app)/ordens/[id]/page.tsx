@@ -2,11 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import StatusBadge from "@/components/StatusBadge";
 import { updateServiceOrderStage, addComment } from "../actions";
 import { notFound } from "next/navigation";
+import { getCurrentProfile } from "@/lib/profile";
+import Link from "next/link";
 
 const STAGE_FLOW = ["entrada", "arte", "aprovacao", "impressao", "producao", "instalacao", "financeiro", "concluido"];
 
 export default async function OrdemDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   const { data: order } = await supabase
     .from("service_orders")
@@ -49,9 +53,21 @@ export default async function OrdemDetailPage({ params }: { params: { id: string
           </h1>
           <p className="text-sm text-gardin-muted">{order.clients?.name}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <StatusBadge status={order.priority} />
           <StatusBadge status={order.current_stage} />
+          <Link
+            href={`/ordens/${order.id}/editar`}
+            className="text-xs bg-black/40 border border-gardin-border rounded-lg px-3 py-1.5 text-gardin-white hover:border-gardin-gold transition"
+          >
+            ✏️ Editar
+          </Link>
+          <Link
+            href={`/ordens/${order.id}/imprimir`}
+            className="text-xs bg-black/40 border border-gardin-border rounded-lg px-3 py-1.5 text-gardin-white hover:border-gardin-gold transition"
+          >
+            🖨️ PDF
+          </Link>
         </div>
       </div>
 
@@ -96,20 +112,22 @@ export default async function OrdemDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-      <div className="bg-gardin-panel border border-gardin-border rounded-xl p-5 mb-6">
-        <h2 className="font-semibold text-gardin-white mb-3">Financeiro</h2>
-        <dl className="text-sm grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Row label="Valor total" value={currency(financial?.total_value)} />
-          <Row label="Desconto" value={currency(financial?.discount)} />
-          <Row label="Valor final" value={currency(financial?.final_value)} />
-          <div>
-            <dt className="text-gardin-muted text-xs">Status</dt>
-            <dd>
-              <StatusBadge status={financial?.status ?? "nao_cobrado"} />
-            </dd>
-          </div>
-        </dl>
-      </div>
+      {canViewFinancials && (
+        <div className="bg-gardin-panel border border-gardin-border rounded-xl p-5 mb-6">
+          <h2 className="font-semibold text-gardin-white mb-3">Financeiro</h2>
+          <dl className="text-sm grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Row label="Valor total" value={currency(financial?.total_value)} />
+            <Row label="Desconto" value={currency(financial?.discount)} />
+            <Row label="Valor final" value={currency(financial?.final_value)} />
+            <div>
+              <dt className="text-gardin-muted text-xs">Status</dt>
+              <dd>
+                <StatusBadge status={financial?.status ?? "nao_cobrado"} />
+              </dd>
+            </div>
+          </dl>
+        </div>
+      )}
 
       <div className="bg-gardin-panel border border-gardin-border rounded-xl p-5 mb-6">
         <h2 className="font-semibold text-gardin-white mb-3">Comentários internos</h2>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
+import { getCurrentProfile } from "@/lib/profile";
 
 function Kpi({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
@@ -13,6 +14,8 @@ function Kpi({ label, value, accent }: { label: string; value: string | number; 
 
 export default async function DashboardPage() {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   const { data: orders } = await supabase
     .from("service_orders")
@@ -55,17 +58,17 @@ export default async function DashboardPage() {
     .select("id", { count: "exact", head: true })
     .eq("is_completed", true);
 
-  const { data: financials } = await supabase
-    .from("financials")
-    .select("final_value, status");
-
-  const receivable = (financials ?? [])
-    .filter((f) => f.status !== "pago")
-    .reduce((sum, f) => sum + Number(f.final_value ?? 0), 0);
-
-  const received = (financials ?? [])
-    .filter((f) => f.status === "pago")
-    .reduce((sum, f) => sum + Number(f.final_value ?? 0), 0);
+  let receivable = 0;
+  let received = 0;
+  if (canViewFinancials) {
+    const { data: financials } = await supabase.from("financials").select("final_value, status");
+    receivable = (financials ?? [])
+      .filter((f) => f.status !== "pago")
+      .reduce((sum, f) => sum + Number(f.final_value ?? 0), 0);
+    received = (financials ?? [])
+      .filter((f) => f.status === "pago")
+      .reduce((sum, f) => sum + Number(f.final_value ?? 0), 0);
+  }
 
   const currency = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -93,13 +96,15 @@ export default async function DashboardPage() {
         <Kpi label="Em produção" value={inProduction ?? 0} />
         <Kpi label="Em instalação" value={inInstallation ?? 0} />
         <Kpi label="Concluídas" value={completed ?? 0} />
-        <Kpi label="A receber" value={currency(receivable)} accent />
+        {canViewFinancials && <Kpi label="A receber" value={currency(receivable)} accent />}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Kpi label="Total recebido" value={currency(received)} />
-        <Kpi label="Total a receber" value={currency(receivable)} />
-      </div>
+      {canViewFinancials && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Kpi label="Total recebido" value={currency(received)} />
+          <Kpi label="Total a receber" value={currency(receivable)} />
+        </div>
+      )}
 
       <div className="bg-gardin-panel border border-gardin-border rounded-xl">
         <div className="px-5 py-4 border-b border-gardin-border">

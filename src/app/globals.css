@@ -18,3 +18,12 @@ body {
   background: #26262a;
   border-radius: 4px;
 }
+
+@media print {
+  body {
+    background: white !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
