@@ -169,3 +169,97 @@ export async function addComment(formData: FormData) {
   revalidatePath(`/ordens/${orderId}`);
   redirect(`/ordens/${orderId}`);
 }
+
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/jpg", "application/pdf"];
+
+export async function uploadAttachment(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const orderId = String(formData.get("order_id"));
+  const category = String(formData.get("category") || "geral");
+  const file = formData.get("file") as File | null;
+
+  if (!file || file.size === 0) {
+    redirect(`/ordens/${orderId}?erro=${encodeURIComponent("Selecione um arquivo.")}`);
+  }
+
+  if (!ALLOWED_FILE_TYPES.includes(file!.type)) {
+    redirect(`/ordens/${orderId}?erro=${encodeURIComponent("Apenas arquivos JPG ou PDF são aceitos.")}`);
+  }
+
+  const arrayBuffer = await file!.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const safeName = file!.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+  const path = `${orderId}/${Date.now()}-${safeName}`;
+
+  const { error: uploadError } = await supabase.storage.from("attachments").upload(path, buffer, {
+    contentType: file!.type,
+  });
+
+  if (uploadError) {
+    redirect(`/ordens/${orderId}?erro=${encodeURIComponent("Falha ao enviar arquivo: " + uploadError.message)}`);
+  }
+
+  await supabase.from("attachments").insert({
+    service_order_id: orderId,
+    file_path: path,
+    file_name: file!.name,
+    file_type: file!.type,
+    category,
+    uploaded_by: user?.id ?? null,
+  });
+
+  revalidatePath(`/ordens/${orderId}`);
+  redirect(`/ordens/${orderId}`);
+}
+
+export async function deleteAttachment(formData: FormData) {
+  const supabase = createClient();
+  const orderId = String(formData.get("order_id"));
+  const attachmentId = String(formData.get("attachment_id"));
+  const filePath = String(formData.get("file_path"));
+
+  await supabase.storage.from("attachments").remove([filePath]);
+  await supabase.from("attachments").delete().eq("id", attachmentId);
+
+  revalidatePath(`/ordens/${orderId}`);
+  redirect(`/ordens/${orderId}`);
+}
+
+export async function addChecklistItem(formData: FormData) {
+  const supabase = createClient();
+  const orderId = String(formData.get("order_id"));
+  const productionJobId = String(formData.get("production_job_id"));
+  const label = String(formData.get("item_label") || "").trim();
+
+  if (label) {
+    const { count } = await supabase
+      .from("production_checklists")
+      .select("id", { count: "exact", head: true })
+      .eq("production_job_id", productionJobId);
+
+    await supabase.from("production_checklists").insert({
+      production_job_id: productionJobId,
+      item_label: label,
+      sort_order: count ?? 0,
+    });
+  }
+
+  revalidatePath(`/ordens/${orderId}`);
+  redirect(`/ordens/${orderId}`);
+}
+
+export async function toggleChecklistItem(formData: FormData) {
+  const supabase = createClient();
+  const orderId = String(formData.get("order_id"));
+  const itemId = String(formData.get("item_id"));
+  const isDone = formData.get("is_done") === "true";
+
+  await supabase.from("production_checklists").update({ is_done: !isDone }).eq("id", itemId);
+
+  revalidatePath(`/ordens/${orderId}`);
+  redirect(`/ordens/${orderId}`);
+}

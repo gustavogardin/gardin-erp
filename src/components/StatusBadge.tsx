@@ -17,6 +17,11 @@ const COLOR_MAP: Record<string, string> = {
   normal: "bg-gray-500/20 text-gray-300 border-gray-500/40",
   alta: "bg-orange-500/20 text-orange-300 border-orange-500/40",
   urgente: "bg-red-500/20 text-red-300 border-red-500/40",
+  // orçamento
+  rascunho: "bg-gray-500/20 text-gray-300 border-gray-500/40",
+  enviado: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+  aprovado: "bg-green-500/20 text-green-300 border-green-500/40",
+  rejeitado: "bg-red-500/20 text-red-300 border-red-500/40",
 };
 
 const LABEL_MAP: Record<string, string> = {
@@ -42,6 +47,10 @@ const LABEL_MAP: Record<string, string> = {
   producao: "Produção",
   instalacao: "Instalação",
   financeiro: "Financeiro",
+  rascunho: "Rascunho",
+  enviado: "Enviado ao cliente",
+  aprovado: "Aprovado",
+  rejeitado: "Rejeitado",
 };
 
 export default function StatusBadge({ status }: { status: string }) {

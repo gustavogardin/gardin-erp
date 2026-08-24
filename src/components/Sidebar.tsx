@@ -4,6 +4,7 @@ import { signOut } from "@/app/login/actions";
 
 const mainLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/orcamentos", label: "Orçamentos", icon: "📄" },
   { href: "/ordens", label: "Ordens de Serviço", icon: "🧾" },
   { href: "/clientes", label: "Clientes", icon: "👥" },
 ];

@@ -2,6 +2,88 @@
 
 Sistema de gestão de OS para comunicação visual, feito em **Next.js 14 + Supabase + Tailwind**.
 
+## Atualização mais recente: Arquivos + Checklist de Produção
+
+- **Anexar arquivos (JPG ou PDF)** na OS, marcando a categoria: Arte,
+  Impressão, Produção ou Geral — aparecem como miniatura (imagem) ou ícone
+  (PDF), com link temporário de 1h por segurança.
+- **Checklist de Produção**: dentro da OS, adicione as sub-etapas que
+  aquele trabalho precisa (ex: Serraria, Pintura, Recorte de adesivo,
+  Aplicação de adesivo) e marque cada uma conforme for concluindo. É livre
+  — você escreve o nome da etapa que quiser, um checklist diferente pra
+  cada OS.
+
+### Rodar a atualização no seu Supabase já publicado
+
+1. **Criar o bucket de arquivos** (só pelo painel, não é SQL):
+   Supabase > Storage > New bucket > nome `attachments` > deixe
+   "Public bucket" **desmarcado** > Create bucket.
+2. Supabase > SQL Editor > New query > cole `supabase/migration_4.sql` > Run
+   (isso libera o acesso ao bucket que você acabou de criar).
+3. Suba os arquivos novos/alterados no GitHub (`src` e `supabase`) — a Vercel
+   republica sozinha.
+
+Não precisa mexer em nenhuma variável de ambiente nova para esta atualização.
+
+## Atualização anterior: módulo de Orçamentos
+
+- **Orçamentos por item**: monte um orçamento com vários itens, cada um com
+  descritivo técnico (uma característica por linha), medidas, quantidade,
+  valor, e quais setores aquele item passa (arte/impressão/produção/instalação).
+- **PDF do orçamento**: gera automaticamente no visual da Gardin.
+- **Aprovação pelo cliente sem login**: gere um link e envie — o cliente
+  aprova ou pede alteração direto pelo celular, sem precisar de conta.
+- **Converter em OS com um clique**: depois de aprovado, o botão "Converter em
+  Ordem de Serviço" já cria a OS com os setores certos marcados e o valor
+  preenchido.
+
+### Rodar a atualização no seu Supabase já publicado
+
+1. Supabase > SQL Editor > New query > cole `supabase/migration_3.sql` > Run.
+2. Pegue a **service_role key**: Supabase > Project Settings > API Keys >
+   aba "Legacy anon, service_role API keys" > copie a chave `service_role`
+   (⚠️ essa é diferente da `anon` — nunca compartilhe ou exponha no navegador).
+3. Na Vercel: Project > Settings > Environment Variables > adicione uma nova:
+   - Nome: `SUPABASE_SERVICE_ROLE_KEY`
+   - Valor: a chave que você copiou
+   - Clique em Save, depois em Deployments > vá nos "..." do último deploy >
+     **Redeploy** (as variáveis de ambiente só entram em vigor num novo deploy).
+4. Suba os arquivos novos/alterados no GitHub (`src` e `supabase`) — a Vercel
+   republica sozinha.
+
+## Atualização anterior
+
+- **Acesso sem financeiro**: dá pra criar um colaborador que só cadastra OS e não
+  vê nenhum valor (dashboard, detalhe da OS e formulário de nova OS escondem
+  os campos financeiros automaticamente). Veja `supabase/migration_2.sql`.
+- **Edição da OS**: agora dá pra editar qualquer OS já criada (inclusive
+  corrigir o valor que ficou faltando) em "OS > Editar".
+- **PDF da Ordem de Serviço**: botão "🖨️ PDF" na OS abre uma versão para
+  impressão/PDF com a logo e dados da Gardin, no estilo do modelo de
+  orçamento/OS que você mandou. Para editar dados da empresa que aparecem
+  no PDF (CNPJ, dados bancários, condições comerciais), edite
+  `src/lib/company.ts`.
+- **Abas de processo**: a barra lateral agora tem "Arte", "Impressão",
+  "Produção" e "Instalação" — cada uma mostra a fila de OS naquela etapa,
+  com botão para avançar direto.
+
+### Rodar a atualização no seu Supabase já publicado
+
+1. Supabase > SQL Editor > New query.
+2. Cole o conteúdo de `supabase/migration_2.sql` e rode.
+3. Suba os arquivos novos/alterados no GitHub (mesma tela de upload de
+   antes) — a Vercel republica sozinha em 1-2 minutos.
+
+### Criar um colaborador sem acesso a valores
+
+1. Supabase > Authentication > Users > Add user (como antes).
+2. Copie o UID e rode no SQL Editor:
+
+```sql
+insert into profiles (id, full_name, role, can_view_financials)
+values ('UID-AQUI', 'Nome do Colaborador', 'comercial', false);
+```
+
 ## O que já está pronto (Módulo 1)
 
 - Login com autenticação real (Supabase Auth)
