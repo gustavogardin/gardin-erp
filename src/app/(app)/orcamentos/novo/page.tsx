@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createQuote } from "../actions";
 import QuoteItemsForm from "@/components/QuoteItemsForm";
+import { getCurrentProfile } from "@/lib/profile";
 
 export default async function NovoOrcamentoPage({
   searchParams,
@@ -8,6 +9,8 @@ export default async function NovoOrcamentoPage({
   searchParams: { erro?: string };
 }) {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
   const { data: clients } = await supabase.from("clients").select("id, name").order("name");
 
   return (
@@ -108,7 +111,7 @@ export default async function NovoOrcamentoPage({
 
         <div>
           <h2 className="text-sm font-semibold text-gardin-white mb-3">Itens do orçamento</h2>
-          <QuoteItemsForm />
+          <QuoteItemsForm canViewFinancials={canViewFinancials} />
         </div>
 
         <button

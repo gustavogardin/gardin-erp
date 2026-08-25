@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import PrintButton from "@/components/PrintButton";
 import { COMPANY } from "@/lib/company";
+import { getCurrentProfile } from "@/lib/profile";
 
 const currency = (n: number) =>
   Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -11,6 +12,8 @@ const dateBR = (d: string | null) => (d ? new Date(d).toLocaleDateString("pt-BR"
 
 export default async function ImprimirOrdemPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   const { data: order } = await supabase
     .from("service_orders")
@@ -99,7 +102,7 @@ export default async function ImprimirOrdemPage({ params }: { params: { id: stri
               <th className="border border-gray-300 px-2 py-1 text-left">Qtde</th>
               <th className="border border-gray-300 px-2 py-1 text-left">Medidas</th>
               <th className="border border-gray-300 px-2 py-1 text-left">Material</th>
-              <th className="border border-gray-300 px-2 py-1 text-right">Valor</th>
+              {canViewFinancials && <th className="border border-gray-300 px-2 py-1 text-right">Valor</th>}
             </tr>
           </thead>
           <tbody>
@@ -109,14 +112,16 @@ export default async function ImprimirOrdemPage({ params }: { params: { id: stri
               <td className="border border-gray-300 px-2 py-1">{order.quantity ?? "-"}</td>
               <td className="border border-gray-300 px-2 py-1">{order.measurements ?? "-"}</td>
               <td className="border border-gray-300 px-2 py-1">{order.material ?? "-"}</td>
-              <td className="border border-gray-300 px-2 py-1 text-right">
-                {financial ? currency(financial.total_value) : "-"}
-              </td>
+              {canViewFinancials && (
+                <td className="border border-gray-300 px-2 py-1 text-right">
+                  {financial ? currency(financial.total_value) : "-"}
+                </td>
+              )}
             </tr>
           </tbody>
         </table>
 
-        {financial && (
+        {canViewFinancials && financial && (
           <div className="flex justify-end text-sm mb-4">
             <div className="w-64">
               <div className="flex justify-between">

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import Link from "next/link";
 import { generateApprovalLink, convertQuoteToOrder } from "../actions";
+import { getCurrentProfile } from "@/lib/profile";
 
 export default async function OrcamentoDetailPage({
   params,
@@ -12,6 +13,8 @@ export default async function OrcamentoDetailPage({
   searchParams: { erro?: string };
 }) {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   const { data: quote } = await supabase
     .from("quotes")
@@ -67,9 +70,11 @@ export default async function OrcamentoDetailPage({
                 <p className="text-gardin-white font-medium">
                   {item.name} {item.measurements ? `— ${item.measurements}` : ""}
                 </p>
-                <p className="text-gardin-gold font-medium">
-                  {currency(item.unit_value * item.quantity)}
-                </p>
+                {canViewFinancials && (
+                  <p className="text-gardin-gold font-medium">
+                    {currency(item.unit_value * item.quantity)}
+                  </p>
+                )}
               </div>
               <p className="text-xs text-gardin-muted">Qtd: {item.quantity}</p>
               {item.technical_description && (
@@ -82,10 +87,12 @@ export default async function OrcamentoDetailPage({
             </div>
           ))}
         </div>
-        <div className="text-right border-t border-gardin-border pt-3 mt-3">
-          <span className="text-sm text-gardin-muted mr-2">Total:</span>
-          <span className="text-lg font-bold text-gardin-gold">{currency(total)}</span>
-        </div>
+        {canViewFinancials && (
+          <div className="text-right border-t border-gardin-border pt-3 mt-3">
+            <span className="text-sm text-gardin-muted mr-2">Total:</span>
+            <span className="text-lg font-bold text-gardin-gold">{currency(total)}</span>
+          </div>
+        )}
       </div>
 
       {/* Link de aprovação */}

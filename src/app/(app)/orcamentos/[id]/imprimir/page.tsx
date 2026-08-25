@@ -2,12 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
 import { COMPANY } from "@/lib/company";
+import { getCurrentProfile } from "@/lib/profile";
 
 const currency = (n: number) =>
   Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default async function ImprimirOrcamentoPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
+  const profile = await getCurrentProfile();
+  const canViewFinancials = profile?.canViewFinancials ?? true;
 
   const { data: quote } = await supabase
     .from("quotes")
@@ -77,26 +80,30 @@ export default async function ImprimirOrcamentoPage({ params }: { params: { id: 
                     ))}
                 </ul>
               )}
-              <div className="bg-yellow-50 border border-yellow-300 text-sm px-3 py-1.5">
-                {item.quantity > 1 ? "Valor unitário" : "Valor"}: {currency(item.unit_value)}
-              </div>
+              {canViewFinancials && (
+                <div className="bg-yellow-50 border border-yellow-300 text-sm px-3 py-1.5">
+                  {item.quantity > 1 ? "Valor unitário" : "Valor"}: {currency(item.unit_value)}
+                </div>
+              )}
             </div>
           ))}
 
-          <div className="border-t-2 border-black pt-4 mt-6">
-            <p className="text-sm font-bold mb-2">INVESTIMENTO TOTAL</p>
-            <p className="text-2xl font-bold mb-3">{currency(total)}</p>
-            <div className="text-sm space-y-1">
-              {(items ?? []).map((item: any) => (
-                <div key={item.id} className="flex justify-between">
-                  <span>
-                    {item.quantity}x {item.name}
-                  </span>
-                  <span>{currency(item.unit_value * item.quantity)}</span>
-                </div>
-              ))}
+          {canViewFinancials && (
+            <div className="border-t-2 border-black pt-4 mt-6">
+              <p className="text-sm font-bold mb-2">INVESTIMENTO TOTAL</p>
+              <p className="text-2xl font-bold mb-3">{currency(total)}</p>
+              <div className="text-sm space-y-1">
+                {(items ?? []).map((item: any) => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
+                    <span>{currency(item.unit_value * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {quote.deadline_estimate && (
             <div className="mt-4 text-sm">

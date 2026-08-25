@@ -28,7 +28,7 @@ const emptyItem: Item = {
   art_already_approved: false,
 };
 
-export default function QuoteItemsForm() {
+export default function QuoteItemsForm({ canViewFinancials = true }: { canViewFinancials?: boolean }) {
   const [items, setItems] = useState<Item[]>([{ ...emptyItem }]);
 
   const update = (index: number, patch: Partial<Item>) => {
@@ -105,16 +105,18 @@ export default function QuoteItemsForm() {
                 className="w-full bg-black/40 border border-gardin-border rounded-lg px-3 py-2 text-sm text-gardin-white"
               />
             </div>
-            <div className="col-span-2">
-              <label className="block text-xs text-gardin-muted mb-1">Valor unitário (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={item.unit_value}
-                onChange={(e) => update(index, { unit_value: Number(e.target.value) })}
-                className="w-full bg-black/40 border border-gardin-border rounded-lg px-3 py-2 text-sm text-gardin-white"
-              />
-            </div>
+            {canViewFinancials && (
+              <div className="col-span-2">
+                <label className="block text-xs text-gardin-muted mb-1">Valor unitário (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={item.unit_value}
+                  onChange={(e) => update(index, { unit_value: Number(e.target.value) })}
+                  className="w-full bg-black/40 border border-gardin-border rounded-lg px-3 py-2 text-sm text-gardin-white"
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -170,9 +172,11 @@ export default function QuoteItemsForm() {
             )}
           </div>
 
-          <p className="text-right text-sm text-gardin-muted">
-            Subtotal: <span className="text-gardin-white font-medium">{currency(item.unit_value * item.quantity)}</span>
-          </p>
+          {canViewFinancials && (
+            <p className="text-right text-sm text-gardin-muted">
+              Subtotal: <span className="text-gardin-white font-medium">{currency(item.unit_value * item.quantity)}</span>
+            </p>
+          )}
         </div>
       ))}
 
@@ -184,10 +188,12 @@ export default function QuoteItemsForm() {
         + Adicionar item
       </button>
 
-      <div className="text-right border-t border-gardin-border pt-3">
-        <span className="text-sm text-gardin-muted mr-2">Total do orçamento:</span>
-        <span className="text-xl font-bold text-gardin-gold">{currency(total)}</span>
-      </div>
+      {canViewFinancials && (
+        <div className="text-right border-t border-gardin-border pt-3">
+          <span className="text-sm text-gardin-muted mr-2">Total do orçamento:</span>
+          <span className="text-xl font-bold text-gardin-gold">{currency(total)}</span>
+        </div>
+      )}
     </div>
   );
 }
